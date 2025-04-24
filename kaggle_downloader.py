@@ -1,69 +1,72 @@
 import os
+import shutil
+from pathlib import Path
 from google.colab import files
 
 def setup_kaggle():
-    """Install Kaggle API and set up credentials."""
-    # Upload kaggle.json    
+    """
+    Installs and configures Kaggle API by uploading and placing kaggle.json.
+    """
     print("Please upload your 'kaggle.json' file:")
     uploaded = files.upload()
-    
+
     if 'kaggle.json' not in uploaded:
-        raise FileNotFoundError("Failed to upload kaggle.json - please download it from Kaggle account settings")
-    
-    # Move and set permissions
-    !mkdir -p ~/.kaggle
-    !mv kaggle.json ~/.kaggle/
-    !chmod 600 ~/.kaggle/kaggle.json
-    print("Kaggle API successfully configured!")
+        raise FileNotFoundError("Upload failed. Please download 'kaggle.json' from your Kaggle account settings.")
+
+    # Create .kaggle directory and move the file
+    kaggle_dir = Path.home() / ".kaggle"
+    kaggle_dir.mkdir(parents=True, exist_ok=True)
+    shutil.move("kaggle.json", kaggle_dir / "kaggle.json")
+    os.chmod(kaggle_dir / "kaggle.json", 0o600)
+
+    print("✅ Kaggle API is configured successfully!")
 
 def download_kaggle_data(dataset_path, setup_kaggle_api=True, is_competition=False, unzip=True, delete_zip=True):
     """
-    Download and extract Kaggle dataset or competition files.
-    
+    Downloads and extracts a dataset or competition files from Kaggle.
+
     Args:
-        dataset_path (str): Format 'username/dataset-name' or 'competition-name'
-        setup_kaggle_api (bool): True if you've already set up the Kaggle API
-        is_competition (bool): True for competitions, False for datasets
-        unzip (bool): Whether to unzip the dataset after download (default True)
-        delete_zip (bool): Whether to delete the zip file after extraction (default True)
+        dataset_path (str): Dataset in the format 'username/dataset-name' or just 'competition-name'
+        setup_kaggle_api (bool): Set to True to configure Kaggle API before downloading
+        is_competition (bool): Set to True if downloading competition files
+        unzip (bool): Set to True to unzip the downloaded file
+        delete_zip (bool): Set to True to delete the .zip file after extraction
     """
     if setup_kaggle_api:
         setup_kaggle()
 
     try:
-        username, dataset_name = dataset_path.split("/")[-2:]
+        name = dataset_path.split("/")[-1]
 
-        # Download
         if is_competition:
-            !kaggle competitions download -c {dataset_name}
+            os.system(f"kaggle competitions download -c {name}")
         else:
-            !kaggle datasets download -d {username}/{dataset_name}
-                
-        # Unzip if the option is enabled
-        if unzip:
-            !unzip -q {dataset_name}.zip -d {dataset_name}
-        
-        # Clean up zip file if the option is enabled
-        if delete_zip:
-            !rm {dataset_name}.zip
-        
-        print(f"Successfully downloaded and extracted {dataset_name}")
-        
+            os.system(f"kaggle datasets download -d {dataset_path}")
+
+        zip_file = f"{name}.zip"
+        if unzip and os.path.exists(zip_file):
+            os.system(f"unzip -q {zip_file} -d {name}")
+
+        if delete_zip and os.path.exists(zip_file):
+            os.remove(zip_file)
+
+        print(f"✅ Successfully downloaded and extracted: {name}")
+
     except Exception as e:
         print(f"Error: {str(e)}")
-        print("Make sure:")
-        print("- The dataset/competition name is correct")
-        print("- You have accepted competition rules (if applicable)")
-        print("- Your Kaggle API key is valid")
+        print("Please check the following:")
+        print("- Dataset or competition name is correct")
+        print("- You have accepted the competition rules if applicable")
+        print("- Your Kaggle API key is valid and correctly configured")
 
 
-# Example usage:
-# 1. Set up Kaggle API (run this only once per session)
+# Example Usage
+# Step 1 (optional): Set up the Kaggle API (only once per session)
 # setup_kaggle()
 
-# 2. Download a dataset or competition data
+# Step 2: Download dataset or competition files
 # For datasets:
-# download_kaggle_data('<username/dataset-name>', setup_kaggle_api=False)
+# download_kaggle_data('username/dataset-name', setup_kaggle_api=False)
 
 # For competitions:
-# download_kaggle_data('<competitions-name>', setup_kaggle_api=False, is_competition=True)
+# download_kaggle_data('competition-name', setup_kaggle_api=False, is_competition=True)
