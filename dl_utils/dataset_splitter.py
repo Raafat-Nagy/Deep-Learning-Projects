@@ -27,6 +27,9 @@ def split_class(
     - shuffle (bool): If True, shuffle the images before splitting.
     - image_extensions (tuple): Tuple of image file extensions to include.
     - verbose (bool): If True, print detailed information during processing.
+
+    Returns:
+    - dict: A dictionary containing class-wise split details.
     """
     train_ratio, val_ratio, test_ratio = ratio
     assert (
@@ -67,7 +70,10 @@ def split_class(
     if test_ratio > 0:
         splits["test"] = images[val_end:]
 
+    class_details = {"class":class_name, "total":total_images, "train":0, "val":0, "test":0}
+
     for split_name, split_images in splits.items():
+        class_details[split_name] = len(split_images)
         if not split_images:
             continue
 
@@ -88,6 +94,7 @@ def split_class(
     if verbose:
         print()
 
+    return class_details
 
 def split_dataset(
     data_dir,
@@ -111,11 +118,16 @@ def split_dataset(
     - shuffle (bool): If True, shuffle the images before splitting.
     - image_extensions (tuple): Tuple of image file extensions to include.
     - verbose (bool): If True, print detailed information during processing.
+
+    Returns:
+    - list: A list of dictionaries containing class-wise split details.
     """
+    summary = []
+
     for class_name in os.listdir(data_dir):
         class_path = os.path.join(data_dir, class_name)
         if os.path.isdir(class_path):
-            split_class(
+            class_details = split_class(
                 class_dir=class_path,
                 output_dir=output_dir,
                 ratio=ratio,
@@ -126,6 +138,9 @@ def split_dataset(
                 image_extensions=image_extensions,
                 verbose=verbose,
             )
+
+            if class_details:
+                summary.append(class_details)
 
 
 """
@@ -170,14 +185,13 @@ dataset_split/
 │   │      └── ...
 
 """
-
 # Usage Example
 if __name__ == "__main__":
     # You can run this file directly or import the function elsewhere
-    data_dir = "/content/oral-diseases"
+    data_dir = "input-dataset-dir"
     output_dir = "dataset_split"
 
-    split_dataset(
+    summary = split_dataset(
         data_dir=data_dir,
         output_dir=output_dir,
         ratio=(0.8, 0.1, 0.1),  # 80% train, 10% val, 10% test
