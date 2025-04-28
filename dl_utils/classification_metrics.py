@@ -25,6 +25,20 @@ class ClassificationMetrics:
         
     display_classification_report():
         Prints the classification report to the console.
+
+    Example Usage:
+    --------------
+    If you want to use this class to visualize metrics and generate reports, you can follow the example below:
+    
+    ```python
+    true_labels = [0, 1, 1, 0, 2, 2, 1, 0, 1, 2]
+    pred_labels = [0, 1, 1, 0, 1, 2, 2, 0, 1, 2]
+    class_names = ["Class 0", "Class 1", "Class 2"]
+
+    metrics = ClassificationMetrics(true_labels, pred_labels, class_names)
+    metrics.plot_confusion_matrix(figsize=(8, 6), cbar=True, x_rotation=45, y_rotation=45)
+    metrics.display_classification_report()
+    ```
     """
     
     def __init__(self, true_labels, pred_labels, class_names=None):
